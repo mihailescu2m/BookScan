@@ -202,10 +202,12 @@ struct BookDetailContent: View {
                 // without a size-class check (which is always .compact on iPhone regardless
                 // of orientation, causing a forced single-column layout in landscape).
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 260))], spacing: 8) {
-                    shelfOption(nil, label: "Unshelved")
                     ForEach(shelves.regularShelves) { shelf in
                         shelfOption(shelf, label: shelf.name)
                     }
+                    // "Unshelved" (remove from any shelf) goes last — it's a "none"
+                    // option, not a primary target, so the real shelves come first.
+                    shelfOption(nil, label: "Unshelved")
                 }
             }
         }
