@@ -59,14 +59,6 @@ struct ExistingBookView: View {
                             notRightBookLink
 
                             shelfLocationCard
-
-                            Spacer(minLength: 24)
-
-                            if isAutoDismissActive {
-                                countdownSection
-                            } else {
-                                doneButton
-                            }
                         }
                         .padding()
                         .contentShape(Rectangle())
@@ -75,6 +67,23 @@ struct ExistingBookView: View {
                         }
                     }
                     .scrollsBehindHeader()
+                    // Pin the countdown/Done to the bottom so it's always in the same
+                    // place whether or not the "Returned" banner is shown (which changes
+                    // the content height). Same mechanism as the New Book sheet's CTA.
+                    .safeAreaInset(edge: .bottom) {
+                        Group {
+                            if isAutoDismissActive {
+                                countdownSection
+                                    .contentShape(Rectangle())
+                                    .onTapGesture { cancelAutoDismiss() }
+                            } else {
+                                doneButton
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, 12)
+                        .padding(.bottom, SheetMetrics.defaultBottomPadding)
+                    }
                 }
             }
             .task {

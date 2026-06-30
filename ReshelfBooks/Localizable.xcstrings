@@ -304,6 +304,9 @@
     "Scan book barcodes to add them to your library" : {
 
     },
+    "Search" : {
+
+    },
     "Search by title, author, or ISBN..." : {
 
     },
@@ -338,6 +341,9 @@
 
     },
     "Shelf name" : {
+
+    },
+    "Shelf options" : {
 
     },
     "Tap camera to change cover, pencil to edit details" : {

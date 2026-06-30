@@ -258,4 +258,25 @@ extension View {
             // ShapeStyle form leaves the home-indicator strip uncovered).
             .presentationBackground { Color(.systemBackground).ignoresSafeArea() }
     }
+
+    /// On iPad, sizes a sheet to fit its content (so nothing is clipped — e.g. the shelf
+    /// grid's 2nd column or a countdown timer at the bottom) at a fixed width, between a
+    /// minimum height and a max of ~70% of the screen. The cap keeps a centered sheet
+    /// clear of the scanner's "Enter ISBN" button (top) and the floating tab bar (bottom)
+    /// — it's the top landmark that binds, since the sheet centers. On iPhone it's a
+    /// no-op: the default full-width bottom sheet stays.
+    @ViewBuilder
+    func fittedSheetOnPad(width: CGFloat, minHeight: CGFloat) -> some View {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            let screenHeight = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .first { $0.activationState == .foregroundActive }?
+                .screen.bounds.height ?? 1366
+            frame(width: width)
+                .frame(minHeight: minHeight, maxHeight: (screenHeight * 0.70).rounded(), alignment: .top)
+                .presentationSizing(.fitted)
+        } else {
+            self
+        }
+    }
 }

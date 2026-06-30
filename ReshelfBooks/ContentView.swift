@@ -63,6 +63,10 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingSearch) {
             SearchView()
+                // Match the other full Library sheets (Book Details, Reorder Shelves):
+                // a full-width page sheet on iPad rather than a narrow form sheet.
+                .presentationDetents([.large])
+                .presentationSizing(.page)
                 .standardSheetPresentation()
         }
         // One family-sharing alert. The buttons are the sole drivers of the outcome;
@@ -123,6 +127,7 @@ struct ContentView: View {
                     .clipShape(Circle())
                     .shadow(color: .black.opacity(0.15), radius: 10, y: 5)
             }
+            .accessibilityLabel("Search")
         }
         .padding(.bottom, 30)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedTab)
@@ -151,6 +156,9 @@ struct ContentView: View {
             .clipShape(RoundedRectangle(cornerRadius: 20))
         }
         .buttonStyle(.plain)
+        // Always expose the tab name to VoiceOver (the label is otherwise only shown
+        // for the selected tab) and to UI tests.
+        .accessibilityLabel(title)
     }
 }
 

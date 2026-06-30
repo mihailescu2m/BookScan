@@ -46,13 +46,22 @@ struct BookDetailContent: View {
                     bookInfoSection
 
                     shelfSelectionSection
-
-                    actionButtonsSection
                 }
                 .padding()
             }
         }
         .scrollsBehindHeader()
+        // Pin Lend/Delete to the bottom so they stay visible as the shelf list grows,
+        // matching the New Book sheet's pinned CTA.
+        .safeAreaInset(edge: .bottom) {
+            if !book.isGone {
+                actionButtonsSection
+                    .padding(.horizontal)
+                    .padding(.top, 12)
+                    .padding(.bottom, SheetMetrics.defaultBottomPadding)
+                    .background(.bar)
+            }
+        }
         .dismissWhenDeleted(book)
         .newShelfAlert(isPresented: $showingNewShelfAlert) { newShelf in
             book.shelf = newShelf

@@ -141,6 +141,9 @@ struct ScannerTabView: View {
             ExistingBookView(book: book, wasReturned: wasReturned, returnedFrom: returnedFrom, onManualEntry: {
                 transitionToManualEntry()
             })
+            // Fit the sheet to its content on iPad so the bottom countdown timer isn't
+            // clipped by a fixed form-sheet height.
+            .fittedSheetOnPad(width: 620, minHeight: 480)
             .standardSheetPresentation()
         case .newBook(let metadata):
             NewBookView(
@@ -154,6 +157,10 @@ struct ScannerTabView: View {
                     transitionToManualEntry()
                 }
             )
+            // On iPad the default form sheet is too narrow for the shelf grid's 260pt
+            // columns (only 1 fits); a wider, content-fitted sheet gives 2 columns and
+            // sizes to content. iPhone keeps its full-width bottom sheet.
+            .fittedSheetOnPad(width: 620, minHeight: 560)
             .standardSheetPresentation()
         case .manualEntry(let isbn):
             // Use .sheet (not .fullScreenCover) so this doesn't share the parent
@@ -162,7 +169,10 @@ struct ScannerTabView: View {
                 pendingAction = .lookup(lookupISBN)
                 activeSheet = nil
             })
+            // iPhone: large detent (full height, comfortable with the keyboard).
+            // iPad: a content-fitted card like the other scanner sheets.
             .presentationDetents([.large])
+            .fittedSheetOnPad(width: 620, minHeight: 460)
             .standardSheetPresentation()
         }
     }

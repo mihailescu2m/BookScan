@@ -62,7 +62,10 @@ struct NewBookView: View {
                 saveButton
                     .padding(.horizontal)
                     .padding(.top, 12)
-                    .padding(.bottom, 8)
+                    // Device-aware bottom gap shared with the half-sheets (iPad 24,
+                    // Touch-ID iPhone 16, Face-ID iPhone 0 since the indicator strip is
+                    // reserved) so the button isn't flush to the sheet's bottom on iPad.
+                    .padding(.bottom, SheetMetrics.defaultBottomPadding)
                     .background(.bar)
             }
             .newShelfAlert(isPresented: $showingNewShelfAlert) { newShelf in

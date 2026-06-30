@@ -463,6 +463,7 @@ struct ShelfSectionView: View {
                     Image(systemName: "ellipsis.circle")
                         .foregroundColor(.secondary)
                 }
+                .accessibilityLabel("Shelf options")
             }
 
             if (shelf.books ?? []).isEmpty {
