@@ -18,6 +18,11 @@ struct ReshelfBooksApp: App {
                 .environment(\.managedObjectContext, persistence.viewContext)
                 .environmentObject(persistence)
                 .task {
+                    #if DEBUG
+                    // Screenshot-only: seeds a sample library when launched with
+                    // `-seedSampleLibrary` (see SampleDataSeeder); no-op otherwise.
+                    await persistence.seedSampleLibraryIfRequested()
+                    #endif
                     // Owner-only structural cleanup (dedup duplicate libraries / lending
                     // shelves) and refresh the shared-state used by the Library title.
                     persistence.bootstrap()
