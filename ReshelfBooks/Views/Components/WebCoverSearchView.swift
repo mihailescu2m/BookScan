@@ -145,6 +145,9 @@ struct WebCoverSearchView: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Cover option \((coverURLs.firstIndex(of: url) ?? 0) + 1)")
+        .accessibilityAddTraits(selectedURL == url ? .isSelected : [])
+        .accessibilityHint("Double tap to use this cover")
         .task {
             await loadImage(from: url)
         }

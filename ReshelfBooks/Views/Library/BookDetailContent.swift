@@ -189,7 +189,7 @@ struct BookDetailContent: View {
             if book.isLent {
                 lentStatusBanner
             } else if shelves.regularShelves.isEmpty {
-                Text("No shelves available. Create one to organize this book.")
+                Text("No shelves yet. Create one to organize your books.")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .padding()
