@@ -100,6 +100,18 @@ struct ContentView: View {
                 Text(reason)
             }
         }
+        .statusBarHidden(hideStatusBarForScreenshots)
+    }
+
+    /// Screenshot-only: hides the iOS status bar when the app is launched with the
+    /// seeder arg, so the App Store captures have no status bar to crop. Always false
+    /// in release builds.
+    private var hideStatusBarForScreenshots: Bool {
+        #if DEBUG
+        CommandLine.arguments.contains("-seedSampleLibrary")
+        #else
+        false
+        #endif
     }
 
     private var floatingTabBar: some View {

@@ -5,6 +5,7 @@
 //  Drives the seeded sample library and captures full-resolution screenshots for the
 //  App Store. Run against an iPhone 6.9" and an iPad 13" simulator; the PNGs are
 //  attached to the test result and exported with `xcresulttool export attachments`.
+//  Snapshot names are the final story order (1..5).
 //
 
 import XCTest
@@ -15,89 +16,72 @@ final class ScreenshotTests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// Waits for seeding to finish. A lent book is used as the signal because lent books
+    /// sit in the pinned "Lent" section at the top of the library, so their card is
+    /// always rendered (unlike shelf books further down a lazy list).
+    @MainActor
+    private func waitForSeed(_ app: XCUIApplication) {
+        let lent = app.buttons.containing(
+            NSPredicate(format: "label CONTAINS[c] %@", "Fahrenheit")
+        ).firstMatch
+        XCTAssertTrue(lent.waitForExistence(timeout: 180), "Sample library did not seed")
+    }
+
     @MainActor
     func testCaptureScreenshots() throws {
         let app = XCUIApplication()
         app.launchArguments = ["-seedSampleLibrary"]
         app.launch()
+        waitForSeed(app)
+        sleep(3)   // let covers finish decoding/rendering
 
-        // Seeding wipes + refetches covers over the network, then saves once — so the
-        // books only appear (already carrying covers) when seeding has fully finished.
-        let dune = app.buttons.containing(
-            NSPredicate(format: "label CONTAINS[c] %@", "Dune")
-        ).firstMatch
-        XCTAssertTrue(dune.waitForExistence(timeout: 120), "Sample library did not seed")
-        // Small settle so the cover images finish decoding/rendering.
-        sleep(3)
+        // 2) Library hero (4 books lent to 2 people show in the Lent section).
+        snapshot(app, "2-your-library")
 
-        // 1) Library hero.
-        snapshot(app, "01-library")
-
-        // 2) Book detail of a lent book (shows "Lent to Alice" + Return).
-        dune.tap()
-        XCTAssertTrue(app.buttons["Return book"].waitForExistence(timeout: 10), "Detail did not open")
-        sleep(1)
-        snapshot(app, "04-book-detail")
-        app.buttons["Done"].tap()
-
-        // 3) Search (duplicate-check angle): find an owned title.
-        app.buttons["Search"].tap()
-        let searchField = app.textFields["Search field"]
-        XCTAssertTrue(searchField.waitForExistence(timeout: 10), "Search did not open")
-        searchField.tap()
-        searchField.typeText("Harry")
-        // Wait for the debounced result row.
-        let result = app.staticTexts.containing(
-            NSPredicate(format: "label CONTAINS[c] %@", "Harry Potter")
-        ).firstMatch
-        XCTAssertTrue(result.waitForExistence(timeout: 10), "Search result did not appear")
-        sleep(1)
-        snapshot(app, "05-search")
-        app.buttons["Cancel"].tap()
-
-        // Switch to the Scan tab for the scan-driven sheets.
         app.buttons["Scan"].tap()
 
-        // 4) Book Location — manual entry of an OWNED ISBN routes to the "found" sheet.
-        lookUp(app, isbn: "9780451524935")   // 1984, already in the library
-        let foundTitle = app.staticTexts.containing(
+        // 3) Find the shelf — scan an OWNED book (The Gruffalo, on Living - Kids Row).
+        lookUp(app, isbn: "9780142403877")
+        let found = app.staticTexts.containing(
             NSPredicate(format: "label CONTAINS[c] %@ OR label CONTAINS[c] %@", "Book Found", "Place this book")
         ).firstMatch
-        XCTAssertTrue(foundTitle.waitForExistence(timeout: 10), "Book Location did not appear")
-        snapshot(app, "02-book-location")
-        // This sheet auto-dismisses after 5s; close it if it's still up.
+        XCTAssertTrue(found.waitForExistence(timeout: 10), "Book Location did not appear")
+        snapshot(app, "3-find-the-shelf")
         if app.buttons["Done"].exists { app.buttons["Done"].tap() }
 
-        // 5) New Book — manual entry of an UNOWNED ISBN does a live lookup.
-        lookUp(app, isbn: "9780544003415")   // The Lord of the Rings, not in the library
+        // 1) Scan to add — an UNOWNED book (Circe by Madeline Miller) via live lookup.
+        lookUp(app, isbn: "9780316556347")
         XCTAssertTrue(app.buttons["Add to Library"].waitForExistence(timeout: 30), "New Book did not appear")
-        // Let the background cover search finish so the preview shows the real cover
-        // instead of the loading spinner.
         let spinner = app.activityIndicators.firstMatch
         let deadline = Date().addingTimeInterval(20)
         while spinner.exists && Date() < deadline { usleep(300_000) }
         sleep(1)
-        snapshot(app, "03-new-book")
+        snapshot(app, "1-scan-to-add")
     }
 
-    /// Captures the Lend sheet mid-entry: a typed borrower name plus the recent-borrower
-    /// chips (Alice/Ben, who already hold the seeded lent books).
+    /// Lend sheet mid-entry (Charlotte's Web): a typed borrower plus the recent-borrower
+    /// chips (Emma / Liam, who hold the seeded lent books).
     @MainActor
     func testCaptureLendSheet() throws {
         let app = XCUIApplication()
         app.launchArguments = ["-seedSampleLibrary"]
         app.launch()
+        waitForSeed(app)
 
-        // Open a NOT-lent book so the Lend action is available.
-        let hobbit = app.buttons.containing(
-            NSPredicate(format: "label CONTAINS[c] %@", "Hobbit")
+        // Reach Charlotte's Web via Search (robust regardless of its shelf position).
+        app.buttons["Search"].tap()
+        let field = app.textFields["Search field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "Search did not open")
+        field.tap()
+        field.typeText("Charlotte")
+        let row = app.buttons.containing(
+            NSPredicate(format: "label CONTAINS[c] %@", "Charlotte's Web")
         ).firstMatch
-        XCTAssertTrue(hobbit.waitForExistence(timeout: 120), "Sample library did not seed")
-        sleep(2)
-        hobbit.tap()
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "Search result did not appear")
+        row.tap()
 
         let lend = app.buttons["Lend book"]
-        XCTAssertTrue(lend.waitForExistence(timeout: 10), "Detail did not open")
+        XCTAssertTrue(lend.waitForExistence(timeout: 10), "Book detail did not open")
         lend.tap()
 
         let nameField = app.textFields["Name"]
@@ -105,32 +89,25 @@ final class ScreenshotTests: XCTestCase {
         nameField.tap()
         nameField.typeText("Sophie")
         sleep(1)
-        snapshot(app, "06-lend")
+        snapshot(app, "4-lend-a-book")
     }
 
-    /// Captures the "Book Returned" result: scanning the lent Dune returns it from Alice
-    /// and shows where to reshelve it.
+    /// "Book Returned" result: scanning the lent Fahrenheit 451 returns it from Emma and
+    /// shows where to reshelve it.
     @MainActor
     func testCaptureReturned() throws {
         let app = XCUIApplication()
         app.launchArguments = ["-seedSampleLibrary"]
         app.launch()
+        waitForSeed(app)
 
-        // Wait for seeding (Dune is seeded as lent to Alice).
-        let dune = app.buttons.containing(
-            NSPredicate(format: "label CONTAINS[c] %@", "Dune")
-        ).firstMatch
-        XCTAssertTrue(dune.waitForExistence(timeout: 120), "Sample library did not seed")
-        sleep(2)
-
-        // Manual-entry of a LENT book's ISBN routes through the return flow.
         app.buttons["Scan"].tap()
-        lookUp(app, isbn: "9780441013593")   // Dune, currently lent to Alice
+        lookUp(app, isbn: "9781451673319")   // Fahrenheit 451, lent to Emma
         let returned = app.staticTexts.containing(
             NSPredicate(format: "label CONTAINS[c] %@ OR label CONTAINS[c] %@", "Book Returned", "Returned from")
         ).firstMatch
         XCTAssertTrue(returned.waitForExistence(timeout: 10), "Return flow did not appear")
-        snapshot(app, "07-book-returned")
+        snapshot(app, "5-scan-to-return")
     }
 
     // MARK: - Helpers
